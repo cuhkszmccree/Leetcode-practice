@@ -1,0 +1,158 @@
+Concluded some bit manipulation and bitmask exercises, difficulty goes from low to high
+总结几道非常有意义的位运算和Bitmask题，难度由低到高
+
+
+https://leetcode.com/problems/number-of-1-bits/ (easy)
+https://leetcode.com/problems/single-number/ (easy)
+https://leetcode.com/problems/sum-of-two-integers/ (highly recommend)
+https://leetcode.com/problems/bitwise-and-of-numbers-range/submissions/ (medium)
+https://leetcode.com/problems/bitwise-ors-of-subarrays/ (medium) (highly recommend)
+https://leetcode.com/problems/single-number-ii/ (medium) (highly recommend, even u can think how to solve the problem when every elements appear 4,5,6 times and only one appers 1 time, how can u solve it)
+https://leetcode.com/problems/single-number-iii/ (medium) (highly recommend)
+https://leetcode.com/problems/number-of-ways-to-wear-different-hats-to-each-other/ (hard) (highly recommend)
+
+
+Why we need to use Bitmask to handle some difficult problems?
+Reason 1: bit manipulation is faster than normal operation such as '+-*/'
+Reason 2: bitmask can help us record the state. if you use an int variable or boolean variable to store the the state, it will cost 4 bytes,
+so you use bit 0/1 to store the state, that will save lots of space.
+
+Some bitmask's operation:
+1.Record state
+you can initiate the bitmask as 00000000 if you have 8 states, and use 'or |' operation to save your state.
+eg.
+bitmask = 00000000
+new_state1 = 00001000
+bitmask | new_state1 = 00001000 which means the fourth state have been recorded
+new_state2 = 00010001
+bitmask | new_state2 = 00011001 which means the fifth and first state have been recorded
+
+2. query state
+you can use 0..1..0 and 'and &' operation to query the states, the position of 1 means which state you want to query.
+eg.
+bitmask = 01011111
+query_state1 = 00001000
+bitmask & query_state1 = 00001000 means the fourth state was recorded
+query_state2 = 10000000
+bitmask & query_state2 = 00000000 means the eighth state was not recorded
+
+3. delete state
+you can use 1..0..1 and 'and &' operation to query the states, the position of 1 means which state you want to query.
+eg.
+bitmask = 10100110
+delete_state1 = 11011111
+bitmask & delete_state1 = 10000110 means the sixth state was deleted
+delete_state2 = 11111011
+bitmask & delete_state2 = 10000011 means the third state was deleted
+
+4. set,keep and delete state
+you can use 'XOR ^' operation to set,keep and delete the states
+eg.
+bitmask = 10101111
+transfer_state = 00010110
+bitmask ^ transfer_state = 10111001
+
+I will show how transfer state work and explain it in the later of the article.
+
+
+Later I will show some code for the bitmask excersices and explain why these works and helped a lot.
+1.
+Leetcode single number (explain how transfer state works)
+https://leetcode.com/problems/single-number/
+code:
+  def singleNumber(self, nums: List[int]) -> int:
+        bitmask = 0                  #initial state
+        for i in nums:               
+            bitmask^=i               
+        return bitmask
+          
+Explanation:
+In this question, we know every elements will appear twice and only one element appear once, which means every bit will appear 2*n times
+and only the one elements' bit will appear 2*n+1 times. So we need to set and keep the state when the bit appear 2*n+1 times and delete
+state when bit appear 2*n times.
+
+2.
+Leetcode single number 2
+https://leetcode.com/problems/single-number-ii/
+code:
+  def singleNumber(self, nums: List[int]) -> int:
+        pre_bitone = 0   #store every bit which appears once(3*n+1)
+        pre_bittwo = 0   #store every bit which appears twice(3*n+2,i called it once and twice because if bits appear 3 times it will be deleted)
+        for i in nums:
+            cur_bittwo = pre_bittwo^(pre_bittwo&i)|(pre_bitone&i)
+            cur_bitone = pre_bitone^(~pre_bittwo&i)
+            pre_bitone = cur_bitone
+            pre_bittwo = cur_bittwo
+        return pre_bitone
+
+Explanation:
+cur_bittwo means when we retrieve this number(i), which bits appears twice(3*n), so we need to consider about this: 
+1.those bits who already appears twice and appear in this number(i) should be deleted, because this is its third appearance, so we need use 
+(pre_bittwo&i) to find which bits appear 3 times, and use pre_bittwo^(pre_bittwo&i) to keep those bits appears twice and delete the bits appears 3 times. 
+2.we have some bits appears once and also appears in this number(i), so it appears twice after this number, we need to find them. so we use 
+(pre_bitone&i) to find all bits appears once and also appears in this number(i). 
+3.we use 'or |' to combine those bits in step 1 and step 2 to find all bits appears twice.
+
+cur_bitone means when we retrieve this number(i), which bits appear once(3*n+1), so we need to consider about this:
+1. we only need to find all bits which appears 0(3*n) times, also find those bits which appears once(3*n+1) and dont appear in this number. 
+2. those bits who appears twice before this number(i) should be removed from our thinking, because it only can appears twice or 0 times
+(3*n+2 times and 3*n times). So we use pre_bittwo to find all these bits, then use (~pre_bittwo&i) to remove these bits from i.
+3. like we do in cur_bittwo, using pre_bitone^(~pre_bittwo&i) to find all bits appears once.
+
+Finally, the pre_bitone is the answer(appears once)
+
+3.
+Leetcode Number of Ways to Wear Different Hats to Each Other
+https://leetcode.com/problems/number-of-ways-to-wear-different-hats-to-each-other/
+code:
+  def numberWays(self, hats: List[List[int]]) -> int:
+        #let hats choose person
+        hat_list = [[] for i in range(41)]
+        for person in range(len(hats)):
+            for hat in hats[person]:
+                hat_list[hat].append(person)
+        #dp[hat][person_state]
+        dp = [[0 for j in range(1<<len(hats))] for i in range(41)]
+        dp[0][0] = 0
+        for hat in range(1,len(hat_list)):
+            for state in range(1<<len(hats)):
+                dp[hat][state] = dp[hat-1][state]
+            for person in hat_list[hat]:
+                for state in range(1<<len(hats)):
+                    if not state:
+                        dp[hat][1<<person] += 1
+                    else:
+                        if not state&(1<<person):
+                            dp[hat][state|(1<<person)] += dp[hat-1][state]
+        return dp[-1][-1]%(10**9+7)
+
+This is the most difficult bitmask excercise I ever seen, and I will try my best to explain it.
+Intuitively, when we see this kind of questions, we will first
+
+
+这道题非常之难，也是Bitmask非常巧妙的用法，所以想用中文更清晰的表达一遍自己的思路，希望对读者有所帮助。
+
+首先这道题第一难点不在于使用Bitmask，而在于DP状态的转换，如果根据题目给的数组，通过人去找帽子的思想直接求dp状态转移方程的话，最坏时间复杂度应该为10*C9/40。
+因为我有40顶不同的帽子可分配给前9个人，记录状态的过程相当于做了一个组合（C9/40这还不算组合过程需要花费的时间）。所以直接使用DP就要被否决了。但是我们其实可以
+发现，如果我们把帽子和人换过来，也就是说，如果让帽子匹配人（把人分配给帽子），那么时间复杂度就立马会变成40*2^10（为什么这里是2^10而上面是C9/40的原因是帽子可
+以不给人戴，而人必须要戴帽子，所以组合的时间复杂度稍有不同。这里不展开讲，可以自己计算）。而其实我们现在有了思路之后，在写代码的过程中，也会遇到一个非常棘手的
+问题，我们如何记录已经带了帽子的人的组合？如果使用python tuple， Java array这样的数据结构当作hashmap的key的话，其实是非常复杂的，第一我们要保证戴帽子的人组
+合的排序性，比如（1，3，4）这个组合和（3，4，1）是一样的，但是hashmap会认为是两个不一样的array，所以我们还需要进行sort，而且tuple和array本质上都是不可变的，
+也就是说不可以直接添加或删除元素，所以我们进行状态间转换的时候还需要转变为list进行加减值。这个步骤非常繁琐复杂，所以此时就要邀请本篇的主角Bitmask登场了。如果
+用Bitmask去记录状态的话，可以设置1>>len(preson)作为初始状态，其中最高位的1没有含义，仅为了确保bitmask的范围。中间i存在于[0，len(person))位的1表示第i个
+人带上了帽子，如果第i位为0，则表示第i个人没有戴帽子。那我们的状态转移方程就非常好想了：
+1.任何一个帽子都可以选择不分配给任何人戴，所以对于每一个hat和每一个state，我们都有dp[hat][state] = dp[hat-1][state]做为初始值。
+2.对于任何一个帽子和所有可分配的人，有几种情况：
+      1.如果没有任何人被分配过（state=0），那么说明这是一个初始分配，dp[hat][1<person] += 1(因为我们的初始值都是0，所以不能和下面一样直接加dp[hat-1][state]
+      ，因为dp[hat-1][0]=0，加0就没有意义了）
+      2.如果对于给定帽子，它可以分配给的人已经在之前就被分配过了(state&(1<<person)!=0)，那么就肯定不能再分给他一顶帽子，所以就和不分配一样，直接跳过
+      3.如果已经有人被分配过，并且可分配给的人还没有被分配过帽子，那么新状态下的分配就直接加上旧分配的数量就ok了。举个例子，在之前(1,3,4)号人都被分配过了，且
+        分配的方式有10种，也就是dp[hat-1][1101] = 10, 那么到这个hat可以给第2个人分配的话，那么dp[hat][1111]直接加上这可以分配的10种就好
+最后我们的返回值就是dp[-1][-1],表示所有40种帽子给指定的n个人带，有几种带的方式。
+
+以上
+
+That's all, thank you for your reading, I hope this article will be useful for your learning about Bitmask.
+
+
+
