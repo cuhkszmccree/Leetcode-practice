@@ -126,8 +126,23 @@ code:
                             dp[hat][state|(1<<person)] += dp[hat-1][state]
         return dp[-1][-1]%(10**9+7)
 
-This is the most difficult bitmask excercise I ever seen, and I will try my best to explain it.
-Intuitively, when we see this kind of questions, we will first
+This is a really difficult bitmask excercise, and I will try my best to explain it.
+Intuitively, when we see this kind of questions, iterate the array(do the depth-first search to find all the possible solution) is always
+be our first thinking, it's a good start. while we can see that, if we do the dfs to solve this problem, that will consume huge time and the
+worst time complexity should be 40^10, so it cant run. Next, we can find that we can prun some path which we have passed through, for example,
+if we have calculated the first 3 people wear hats with (10,11,12), then we find there is an another situation that the first 3 people wear
+hats with (11,12,10), that is actually the same with the (10,11,12), so we can record this state in our memo. But we will find a big problem,
+eventhough we design the memo to prun, our solution's time complexity is still huge: 10*C9/40, it still cant run, so we need to think about
+another way to solve it.
+If we cant assign the hat to people, how about assign people to hat? because if we rotate the role of the people and the hat, and then using
+danamic programming, we will find that the time complexity will come to 40*2^10 because our combination of people have at most 2^10 possibility,
+and we have 40 hats to assign. So this thinking should word, now we could write our code.
+While we write the code, we could find that it still have one problem we cant handle with: how to record the state? if we use some data structure
+like python tuple or Java array as the key of our hashmap, it will be really difficult to handle with. Why? Firstly, we need to sort the element of
+the tuple to let those tuple which have same elements be the same eg.(1,3,4)=(3,4,1). Secondly, tuple is immutable which means we cant add
+elements into it, so transfering state will be difficult. Under these two consideration, tuple is not suit for us to store the state. While
+Bitmask is appropriate. we can think when the bit becomes 1 means the people wear hat, the bit becomes 0 means the people dont wear hat. eg.
+100100 means the sixth and third people wear hats while others dont. Finally, we only need to write our code according to our above thinking.
 
 
 这道题非常之难，也是Bitmask非常巧妙的用法，所以想用中文更清晰的表达一遍自己的思路，希望对读者有所帮助。
